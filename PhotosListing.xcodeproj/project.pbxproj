@@ -10,9 +10,22 @@
 		6126D08E2D6F5BBA004D5DC2 /* PhotosListing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotosListing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		6126D0A22D6F6C09004D5DC2 /* Exceptions for "PhotosListing" folder in "PhotosListing" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 6126D08D2D6F5BBA004D5DC2 /* PhotosListing */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		6126D0902D6F5BBA004D5DC2 /* PhotosListing */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				6126D0A22D6F6C09004D5DC2 /* Exceptions for "PhotosListing" folder in "PhotosListing" target */,
+			);
 			path = PhotosListing;
 			sourceTree = "<group>";
 		};
@@ -255,6 +268,9 @@
 				DEVELOPMENT_TEAM = 443MW2J9VW;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PhotosListing/Info.plist;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = Deneme;
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = abc;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -284,6 +300,9 @@
 				DEVELOPMENT_TEAM = 443MW2J9VW;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PhotosListing/Info.plist;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = Deneme;
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = abc;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

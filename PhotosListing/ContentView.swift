@@ -8,16 +8,31 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var viewModel = PhotoLibraryViewModel()
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        NavigationView {
+            List {
+                ForEach(viewModel.assets, id: \.localIdentifier) { asset in
+                    PhotoRow(asset: asset)
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                viewModel.deleteAsset(asset)
+                            } label: {
+                                Text("Sil")
+                            }
+                        }
+                }
+            }
+            .navigationTitle("Fotoğraflar")
+            .onAppear {
+                // Görünüm ilk yüklendiğinde kullanıcıdan izin isteyelim
+                viewModel.requestAuthorization()
+            }
         }
-        .padding()
     }
 }
+
 
 #Preview {
     ContentView()
