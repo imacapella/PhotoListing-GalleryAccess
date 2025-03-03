@@ -8,7 +8,7 @@
 import SwiftUI
 import Photos
 
-class PhotoLibraryViewModel: ObservableObject {
+/*class PhotoLibraryViewModel: ObservableObject {
     @Published var assets: [PHAsset] = []
     
     func requestAuthorization() {
@@ -54,7 +54,7 @@ class PhotoLibraryViewModel: ObservableObject {
             }
         }
     }
-}
+}*/
 
 
 struct PhotoRow: View {
