@@ -4,7 +4,7 @@ import SwiftUI
 struct PhotosListingApp: App {
     var body: some Scene {
         WindowGroup {
-            PhotosGridView()
+            ContentView()
         }
     }
 } 

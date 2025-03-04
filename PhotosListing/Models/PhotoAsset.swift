@@ -1,7 +1,5 @@
 import Photos
-import Foundation
-
-struct PhotoAsset: Identifiable, Equatable, Hashable {
+struct PhotoAsset: Identifiable {
     let asset: PHAsset
     let id: String
     
@@ -16,13 +14,5 @@ struct PhotoAsset: Identifiable, Equatable, Hashable {
     
     var creationDate: Date? {
         asset.creationDate
-    }
-    
-    static func == (lhs: PhotoAsset, rhs: PhotoAsset) -> Bool {
-        lhs.id == rhs.id
-    }
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
     }
 } 

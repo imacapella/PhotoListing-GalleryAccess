@@ -2,7 +2,7 @@ import SwiftUI
 import Photos
 
 struct PhotoPreviewView: View {
-    let asset: PhotoAsset
+    let asset: PHAsset
     @Environment(\.dismiss) var dismiss
     @State private var previewImage: UIImage?
     
@@ -15,7 +15,7 @@ struct PhotoPreviewView: View {
                         .aspectRatio(contentMode: .fit)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    LoadingView()
+                    ProgressView()
                 }
             }
             .navigationBarItems(trailing: Button("Kapat") { dismiss() })
@@ -26,15 +26,17 @@ struct PhotoPreviewView: View {
     }
     
     private func loadFullResolutionImage() {
-        Task {
-            if let image = await PhotoLibraryService.shared.loadImage(
-                for: asset.asset,
-                targetSize: PHImageManagerMaximumSize
-            ) {
-                await MainActor.run {
-                    previewImage = image
-                }
-            }
+        let options = PHImageRequestOptions()
+        options.deliveryMode = .highQualityFormat
+        options.isNetworkAccessAllowed = true
+        
+        PHImageManager.default().requestImage(
+            for: asset,
+            targetSize: PHImageManagerMaximumSize,
+            contentMode: .aspectFit,
+            options: options
+        ) { result, _ in
+            previewImage = result
         }
     }
 } 

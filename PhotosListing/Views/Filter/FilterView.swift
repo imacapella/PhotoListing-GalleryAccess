@@ -1,8 +1,9 @@
 import SwiftUI
+import Photos
 
-struct PhotoFilterView: View {
+struct FilterView: View {
     @Environment(\.dismiss) var dismiss
-    @ObservedObject var viewModel: PhotosViewModel
+    @ObservedObject var viewModel: PhotoLibraryViewModel
     @State private var startDate = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
     @State private var endDate = Date()
     @State private var minimumSize: Double = 0
@@ -34,10 +35,8 @@ struct PhotoFilterView: View {
                 
                 Section {
                     Button(action: {
-                        Task {
-                            await viewModel.filterAssets(startDate: startDate, endDate: endDate, minimumSize: minimumSize)
-                            dismiss()
-                        }
+                        viewModel.filterAssets(startDate: startDate, endDate: endDate, minimumSize: minimumSize)
+                        dismiss()
                     }) {
                         HStack {
                             Spacer()
@@ -49,7 +48,9 @@ struct PhotoFilterView: View {
                 }
             }
             .navigationTitle("Filtreler")
-            .navigationBarItems(trailing: Button("Kapat") { dismiss() })
+            .navigationBarItems(trailing: Button("Kapat") {
+                dismiss()
+            })
         }
     }
 } 
