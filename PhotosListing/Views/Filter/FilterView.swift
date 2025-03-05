@@ -40,11 +40,17 @@ struct FilterView: View {
                     }) {
                         HStack {
                             Spacer()
-                            Text("Filtrele")
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle())
+                            } else {
+                                Text("Filtrele")
+                            }
                             Spacer()
                         }
                     }
                     .buttonStyle(.borderedProminent)
+                    .disabled(viewModel.isLoading)
                 }
             }
             .navigationTitle("Filtreler")

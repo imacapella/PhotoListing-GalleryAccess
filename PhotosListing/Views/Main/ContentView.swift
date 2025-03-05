@@ -8,15 +8,14 @@ import Photos
 struct ContentView: View {
     @StateObject private var viewModel = PhotoLibraryViewModel()
     @State private var showingFilterSheet = false
-    @State private var selectedSortOption: SortOption = .date
     @AppStorage("isDarkMode") private var isDarkMode = false
     @State private var gridColumns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 2)
     
     var body: some View {
-        NavigationStack {
+        NavigationView {
             ScrollView {
                 LazyVGrid(columns: gridColumns, spacing: 24) {
-                    ForEach(sortedAssets, id: \.localIdentifier) { asset in
+                    ForEach(viewModel.sortedAssets, id: \.localIdentifier) { asset in
                         PhotoGridItem(asset: asset)
                             .aspectRatio(1, contentMode: .fit)
                             .contextMenu {
@@ -26,15 +25,25 @@ struct ContentView: View {
                                     Label("Sil", systemImage: "trash")
                                 }
                             }
+                            .onAppear {
+                                if asset == viewModel.sortedAssets.last {
+                                    viewModel.fetchNextPage()
+                                }
+                            }
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
+                
+                if viewModel.isLoading {
+                    ProgressView()
+                        .padding()
+                }
             }
-            .background(Color(uiColor: .systemGroupedBackground))
+            .background(Color(UIColor.systemGroupedBackground))
             .navigationTitle("Fotoğraflar")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Menu {
                         Button {
                             isDarkMode.toggle()
@@ -55,9 +64,9 @@ struct ContentView: View {
                     }
                 }
                 
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
-                        Picker("Sıralama", selection: $selectedSortOption) {
+                        Picker("Sıralama", selection: $viewModel.selectedSortOption) {
                             Label("Tarih", systemImage: "calendar").tag(SortOption.date)
                             Label("Boyut", systemImage: "photo").tag(SortOption.size)
                             Label("İsim", systemImage: "textformat").tag(SortOption.name)
@@ -67,7 +76,7 @@ struct ContentView: View {
                     }
                 }
                 
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         showingFilterSheet = true
                     } label: {
@@ -77,10 +86,9 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showingFilterSheet) {
                 FilterView(viewModel: viewModel)
-                    .presentationDragIndicator(.visible)
             }
-            .task {
-                await viewModel.requestAuthorization()
+            .onAppear {
+                viewModel.requestAuthorization()
             }
         }
         .preferredColorScheme(isDarkMode ? .dark : .light)
