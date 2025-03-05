@@ -13,33 +13,10 @@ struct ContentView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                LazyVGrid(columns: gridColumns, spacing: 24) {
-                    ForEach(viewModel.sortedAssets, id: \.localIdentifier) { asset in
-                        PhotoGridItem(asset: asset)
-                            .aspectRatio(1, contentMode: .fit)
-                            .contextMenu {
-                                Button(role: .destructive) {
-                                    viewModel.deleteAsset(asset)
-                                } label: {
-                                    Label("Sil", systemImage: "trash")
-                                }
-                            }
-                            .onAppear {
-                                if asset == viewModel.sortedAssets.last {
-                                    viewModel.fetchNextPage()
-                                }
-                            }
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 16)
-                
-                if viewModel.isLoading {
-                    ProgressView()
-                        .padding()
-                }
-            }
+            PhotoGridView(
+                viewModel: viewModel,
+                columns: gridColumns
+            )
             .background(Color(UIColor.systemGroupedBackground))
             .navigationTitle("Fotoğraflar")
             .toolbar {

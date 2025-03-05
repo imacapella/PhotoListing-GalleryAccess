@@ -6,12 +6,14 @@ class PhotoLibraryViewModel: ObservableObject {
     @Published var assets: [PHAsset] = []
     @Published var isLoading = false
     @Published var selectedSortOption: SortOption = .date
-    @Published var assetSizes: [String: Double] = [:] // Dosya boyutlarını cache'lemek için
+    @Published var assetSizes: [String: Double] = [:]
     
     private let service = PhotoLibraryService.shared
     private var currentPage = 0
-    private let pageSize = 20 // Her sayfada 20 görsel
+    private let pageSize = 20
     private var hasMorePhotos = true
+    private var fetchResult: PHFetchResult<PHAsset>?
+    private var sizeCalculationQueue = DispatchQueue(label: "com.photoslisting.sizecalculation", qos: .utility)
     
     var sortedAssets: [PHAsset] {
         switch selectedSortOption {
@@ -50,18 +52,20 @@ class PhotoLibraryViewModel: ObservableObject {
     func fetchInitialAssets() {
         currentPage = 0
         assets.removeAll()
+        assetSizes.removeAll()
         hasMorePhotos = true
+        
+        let fetchOptions = PHFetchOptions()
+        fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+        fetchResult = PHAsset.fetchAssets(with: .image, options: fetchOptions)
+        
         fetchNextPage()
     }
     
     func fetchNextPage() {
-        guard !isLoading && hasMorePhotos else { return }
+        guard !isLoading && hasMorePhotos, let fetchResult = fetchResult else { return }
         
         isLoading = true
-        let fetchOptions = PHFetchOptions()
-        fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
-        
-        let fetchResult = PHAsset.fetchAssets(with: .image, options: fetchOptions)
         let startIndex = currentPage * pageSize
         
         guard startIndex < fetchResult.count else {
@@ -73,40 +77,35 @@ class PhotoLibraryViewModel: ObservableObject {
         let endIndex = min(startIndex + pageSize, fetchResult.count)
         var newAssets: [PHAsset] = []
         
-        let dispatchGroup = DispatchGroup()
-        
         for index in startIndex..<endIndex {
             let asset = fetchResult.object(at: index)
             newAssets.append(asset)
             
-            // Her asset için boyut hesaplama
-            dispatchGroup.enter()
-            calculateAssetSize(asset) { [weak self] size in
-                self?.assetSizes[asset.localIdentifier] = size
-                dispatchGroup.leave()
+            // Boyut hesaplamayı arka planda yap
+            sizeCalculationQueue.async { [weak self] in
+                self?.calculateAssetSize(asset) { size in
+                    DispatchQueue.main.async {
+                        self?.assetSizes[asset.localIdentifier] = size
+                    }
+                }
             }
         }
         
-        dispatchGroup.notify(queue: .main) { [weak self] in
+        DispatchQueue.main.async { [weak self] in
             self?.assets.append(contentsOf: newAssets)
             self?.currentPage += 1
             self?.isLoading = false
             self?.hasMorePhotos = endIndex < fetchResult.count
-            self?.objectWillChange.send() // UI'ı güncelle
         }
     }
     
     private func calculateAssetSize(_ asset: PHAsset, completion: @escaping (Double) -> Void) {
         let resources = PHAssetResource.assetResources(for: asset)
         if let resource = resources.first {
-            let options = PHAssetResourceRequestOptions()
-            options.isNetworkAccessAllowed = true
-            
             if let unsignedInt64 = resource.value(forKey: "fileSize") as? CLong {
                 let sizeInMB = Double(unsignedInt64) / (1024 * 1024)
                 completion(sizeInMB)
             } else {
-                // Dosya boyutu alınamazsa piksel boyutundan tahmin et
                 let pixelSize = asset.pixelWidth * asset.pixelHeight
                 let estimatedSizeInMB = Double(pixelSize) * 3 / (1024 * 1024)
                 completion(estimatedSizeInMB)
@@ -133,36 +132,34 @@ class PhotoLibraryViewModel: ObservableObject {
     }
     
     func filterAssets(startDate: Date, endDate: Date, minimumSize: Double) {
-        isLoading = true
+        guard let fetchResult = fetchResult else { return }
         
-        let fetchOptions = PHFetchOptions()
+        isLoading = true
         let calendar = Calendar.current
         let startOfStartDate = calendar.startOfDay(for: startDate)
         let endOfEndDate = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: endDate) ?? endDate
         
-        fetchOptions.predicate = NSPredicate(format: "creationDate >= %@ AND creationDate <= %@", 
-                                           startOfStartDate as NSDate, 
-                                           endOfEndDate as NSDate)
-        
-        let fetchResult = PHAsset.fetchAssets(with: .image, options: fetchOptions)
-        var filteredAssets: [PHAsset] = []
-        let dispatchGroup = DispatchGroup()
-        
-        fetchResult.enumerateObjects { [weak self] (asset, _, _) in
-            dispatchGroup.enter()
-            self?.calculateAssetSize(asset) { size in
-                if size >= minimumSize {
-                    filteredAssets.append(asset)
-                    self?.assetSizes[asset.localIdentifier] = size
+        sizeCalculationQueue.async { [weak self] in
+            var filteredAssets: [PHAsset] = []
+            let dispatchGroup = DispatchGroup()
+            
+            fetchResult.enumerateObjects { (asset, _, stop) in
+                guard let creationDate = asset.creationDate,
+                      creationDate >= startOfStartDate && creationDate <= endOfEndDate else { return }
+                
+                dispatchGroup.enter()
+                self?.calculateAssetSize(asset) { size in
+                    if size >= minimumSize {
+                        filteredAssets.append(asset)
+                    }
+                    dispatchGroup.leave()
                 }
-                dispatchGroup.leave()
             }
-        }
-        
-        dispatchGroup.notify(queue: .main) { [weak self] in
-            self?.assets = filteredAssets
-            self?.isLoading = false
-            self?.objectWillChange.send()
+            
+            dispatchGroup.notify(queue: .main) { [weak self] in
+                self?.assets = filteredAssets
+                self?.isLoading = false
+            }
         }
     }
 } 
